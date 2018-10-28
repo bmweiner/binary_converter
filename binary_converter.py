@@ -10,10 +10,10 @@ i754_std = {
 
 encode_std = {d:i for i,d in enumerate("0123456789abcdef")}
 
-def pad_binary(val, digits=32, side='>', pad=0):
+def pad_binary(val, pad=32, side='>', char='0'):
     """Pad val at left or right with character."""
-    frmt = "{:" + str(pad) + side + str(digits) + "}"
-    
+    frmt = "{:" + str(char) + side + str(pad) + "}"
+
     if val[0] == '-':
         return '-' + frmt.format(val[1:])
     else:
@@ -51,7 +51,7 @@ def base_float(val, base=2):
         integer, fractional = val.split('.')
     else:
         integer = val
-        fractional = 0
+        fractional = '0'
 
     integer = base_integer(integer, base)
     fractional = base_fractional(fractional, base)
@@ -69,6 +69,9 @@ def integer_base(val, digits=32, base=2):
     assert val >= 0, 'val must be positive'
     assert base > 1 and base < 17, 'base must be in [2,16]'
     
+    if val == 0:
+        return '0'
+
     encode = ''.join(encode_std.keys())
     remainder = val
     chars = []
@@ -84,6 +87,9 @@ def fractional_base(val, digits=32, base=2):
     assert val >= 0, 'val must be positive'
     assert val < 1, 'val must be less than 1'
     assert base > 1 and base < 17, 'base must be in [2,16]'
+
+    if val == 0:
+        return '0'
 
     encode = ''.join(encode_std.keys())
     chars = []
@@ -102,9 +108,7 @@ def float_base(val, digits=32, base=2):
     integer = integer_base(int(integer), digits, base)
     fractional = fractional_base(fractional, digits - len(integer), base)
     
-    if not integer:
-        integer = '0'
-    if fractional:
+    if fractional != '0':
         return sign + integer + '.' + fractional
     else:
         return sign + integer
@@ -113,6 +117,9 @@ def float_base(val, digits=32, base=2):
 def float_i754(val, precision=32):
     """Convert float to IEEE 754 of precision, no rounding support."""
     std = i754_std[precision]
+
+    if val == 0:
+        return precision * "0"
     
     sign = '1' if val < 0 else '0'
     val = abs(val)
@@ -131,7 +138,9 @@ def float_i754(val, precision=32):
 def i754_float(val, precision=32):
     """Convert IEEE 754 of precision to float."""
     std = i754_std[precision]
-    
+
+    assert len(val) == precision, 'val must be {} bits'.format(precision)
+
     sign = val[0]
     char = val[1:(std['exp']+1)]
     mant = val[(std['exp']+1):precision]
@@ -150,7 +159,7 @@ def integer_comp1(val, digits=32):
     if val < 0:
         bits = [int(not int(b)) for b in bits]
         bits = ''.join(str(b) for b in bits)
-        bits = pad_binary(bits, digits, pad=1)
+        bits = pad_binary(bits, digits, char=1)
     else:
         bits = pad_binary(bits, digits)
     return bits
@@ -204,6 +213,8 @@ def convert(val, form='decimal', digits=32):
             d754    | IEEE 754 Double  | str        | 0,1
             comp1   | One's Complement | str        | 0,1
             comp2   | Two's Complement | str        | 0,1
+        
+        digits: int. Maximum digits of precision.
     
     Return:
         dict: val converted to all applicable forms.
@@ -242,9 +253,8 @@ def convert(val, form='decimal', digits=32):
     c = dict()
     c['val'] = val
     c['decimal'] = decimal
-    c['hex'] = float_base(decimal, digits, 16)
-    c['binary'] = float_base(decimal, digits)
-    c['binaryP'] = pad_binary(c['binary'], digits)
+    c['hex'] = pad_binary(float_base(decimal, digits, 16), pad=digits/4)
+    c['binary'] = pad_binary(float_base(decimal, digits), pad=digits)
     c['s754'] = float_i754(decimal, 32)
     c['d754'] = float_i754(decimal, 64)
     
