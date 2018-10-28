@@ -1,1 +1,156 @@
-<h1>Binary Converter</h1>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Binary Converter</title>
+    
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script type="text/javascript" src="/js/brython/brython.js"></script>
+    <script type="text/javascript" src="/js/brython/brython_stdlib.js"></script>
+</head>
+
+<body onload="brython()">
+    <script type="text/python">
+        from binary_converter import convert
+
+        from browser import document
+
+        def update(event):
+            val = document["val"].value
+            form = document["form"].value
+            digits = int(document["digits"].value)
+
+            if form == "decimal":
+                if '.' in str(val):
+                    val = float(val)
+                else:
+                    val = int(val)
+
+            c = convert(val, form, digits)
+
+            document["binary"].value = c["binary"]
+            document["decimal"].value = c["decimal"]
+            document["hex"].value = c["hex"]
+            document["s754"].value = c["s754"]
+            document["d754"].value = c['d754'][:32] + "\n" + c['d754'][32:]
+            document["comp1"].value = c["comp1"]
+            document["comp2"].value = c["comp2"]
+
+        def reset(event):
+            document["val"].value = ""
+            document["binary"].value = ""
+            document["decimal"].value = ""
+            document["hex"].value = ""
+            document["s754"].value = ""
+            document["d754"].value = ""
+            document["comp1"].value = ""
+            document["comp2"].value = ""
+
+        document["convert"].bind("click", update)
+        document["reset"].bind("click", reset)
+
+    </script>
+
+    <div class="main-container">
+
+    <div class="widget-container">
+
+        <div class="widget-header">
+            <h2>Binary Converter</h2>
+        </div>
+
+        <div class="widget-body">
+
+            <div class="side-container">
+                <div class="item-container" id="form-grp">
+                    <label for="form">Input Type</label>
+                    <select id="form">
+                        <option value="binary">Binary</option>
+                        <option value="decimal" selected="selected">Decimal</option>
+                        <option value="hex">Hexadecimal</option>
+                        <option value="s754">IEEE 754 Single</option>
+                        <option value="d754">IEEE 754 Double</option>
+                        <option value="comp1">One's Complement</option>
+                        <option value="comp2">Two's Complement</option>
+                    </select>
+                </div>
+
+                <div class="item-container">
+                    <label for="digits">Out Bits</label>
+                    <select id="digits">
+                        <option value=4>4</option>
+                        <option value=8>8</option>
+                        <option value=16>16</option>
+                        <option value=32 selected="selected">32</option>
+                        <option value=64>64</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="item-container">
+                <label for="val">Input Value</label>
+                <input id="val"><br>
+            </div>
+
+            <div class="item-container">
+                <div id="buttons">
+                    <button id="convert">Convert</button>
+                    <button id="reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="item-container">
+                <label for="binary">Binary</label>
+                <input id="binary" readonly><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="decimal">Decimal</label>
+                <input id="decimal" readonly><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="hex">Hexadecimal</label>
+                <input id="hex" readonly><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="s754">IEEE 754 Single</label>
+                <input id="s754" readonly><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="d754">IEEE 754 Double</label>
+                <textarea id="d754" readonly></textarea><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="comp1">One's Complement</label>
+                <input id="comp1" readonly><br>
+            </div>
+        
+            <div class="item-container">
+                <label for="comp2">Two's Complement</label>
+                <input id="comp2" readonly><br>
+            </div>
+
+        </div>
+
+        <div class="widget-footer">
+            <div id="social">
+                <a href="https://github.com/bmweiner/binary_converter">About</a>
+                |
+                <a href="https://github.com/bmweiner/binary_converter/issues">Report Issue</a>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+</body>
+
+</html>
