@@ -42,20 +42,25 @@ a {
     color: #1e3953;
 }
 
-.item-container{
-    display: flex;
-    flex-direction: column;
+.item{
+    padding-top: 10px;
 }
 
-.side-container{
+.side{
     display: flex;
     flex-direction: row;
-    padding: 10px 0px;
 }
 
-#social{
-    display: inline;
-    padding-bottom: 10px;
+.left-side{
+    padding-right: 10px;
+}
+
+#form{
+    width: 206px;
+}
+
+#digits{
+    width: 100px;
 }
 
 label {
@@ -63,7 +68,7 @@ label {
 }
 
 input, textarea, select {
-    width: 317px;
+    width: 316px;
     height: 22px;
     background-color: #f0eef0;
     border: 1px solid  grey;
@@ -73,8 +78,17 @@ input, textarea, select {
 }
 
 textarea {
-    height: 36px;
+    height: 20px;
+    word-wrap: break-word;
     resize: none;
+}
+
+.textarea32{
+    height: 20px;
+}
+
+.textarea64{
+    height: 36px;
 }
 
 button{
@@ -82,18 +96,6 @@ button{
     color: white;
     font-size: 16px;
     border-radius: 5px;
-}
-
-#form{
-    width: 200px;
-}
-
-#form-grp{
-    padding-right: 45px;
-}
-
-#digits{
-    width: 75px;
 }
 
 #val{
@@ -106,4 +108,9 @@ button{
 
 #reset{
     background-color: #dc3545;
+}
+
+#social{
+    display: inline;
+    padding-bottom: 10px;
 }

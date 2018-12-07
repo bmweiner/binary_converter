@@ -10,6 +10,13 @@ i754_std = {
 
 encode_std = {d:i for i,d in enumerate("0123456789abcdef")}
 
+def split_float(val):
+    sval = str(val)
+    if '.' in sval:
+        return [int(v) for v in sval.split('.')]
+    else:
+        return val, 0
+
 def pad_binary(val, pad=32, side='>', char='0'):
     """Pad val at left or right with character."""
     frmt = "{:" + str(char) + side + str(pad) + "}"
@@ -50,8 +57,7 @@ def base_float(val, base=2):
     if '.' in str(val):
         integer, fractional = val.split('.')
     else:
-        integer = val
-        fractional = '0'
+        integer, fractional = val, '0'
 
     integer = base_integer(integer, base)
     fractional = base_fractional(fractional, base)
@@ -81,7 +87,7 @@ def integer_base(val, digits=32, base=2):
         chars.insert(0, encode[char])
     return ''.join(str(c) for c in chars)
 
-def fractional_base(val, digits=32, base=2):
+def fractional_base_old(val, digits=32, base=2):
     """Convert fractional to base n val with max digits."""
     assert isinstance(val, float), 'val must be float'
     assert val >= 0, 'val must be positive'
@@ -100,12 +106,37 @@ def fractional_base(val, digits=32, base=2):
         chars.append(encode[int(integer)])
     return ''.join(str(c) for c in chars)
 
+def fractional_base(val, digits=32, base=2):
+    """Convert fractional to base n val with max digits."""
+    assert isinstance(val, int), 'val must be int'
+    assert val >= 0, 'val must be positive'
+    assert base > 1 and base < 17, 'base must be in [2,16]'
+
+    if val == 0:
+        return '0'
+
+    encode = ''.join(encode_std.keys())
+    chars = []
+    power = len(str(val))
+    coeff = val
+
+    while(coeff > 0 and len(chars) < digits):
+        coeff = coeff * base
+        scoeff = str(coeff)
+        integer = 0
+        places = len(scoeff) - power
+        if places > 0:
+            integer = int(scoeff[:places])
+            coeff = int(scoeff[places:])
+        chars.append(encode[int(integer)])
+    return ''.join(str(c) for c in chars)
+
 def float_base(val, digits=32, base=2):
     """Convert float to base n val with max digits."""
     sign = '-' if val < 0 else ''
-    fractional, integer = math.modf(abs(val))
-    
-    integer = integer_base(int(integer), digits, base)
+    integer, fractional = split_float(abs(val))
+
+    integer = integer_base(integer, digits, base)
     fractional = fractional_base(fractional, digits - len(integer), base)
     
     if fractional != '0':
@@ -126,7 +157,7 @@ def float_i754(val, precision=32):
     
     exponent = math.floor(math.log2(val))
     characteristic = exponent + std['bias']
-    mantissa = math.modf(val / 2**exponent)[0]
+    _, mantissa = split_float(val / 2**exponent)
 
     e = std['exp']
     char = pad_binary(integer_base(characteristic, e), e, '>')
@@ -172,7 +203,7 @@ def integer_comp2(val, digits=32):
     if bits[0] == '1':
         integer = base_integer(bits)
         integer += 1
-        bits = integer_base(integer)
+        bits = integer_base(integer, digits)
     return bits
 
 def comp1_integer(val):
@@ -249,22 +280,26 @@ def convert(val, form='decimal', digits=32):
         decimal = comp1_integer(val)
     elif form == 'comp2':
         decimal = comp2_integer(val)
-   
+
     c = dict()
     c['val'] = val
-    c['decimal'] = decimal
-    c['hex'] = pad_binary(float_base(decimal, digits, 16), pad=digits/4)
-    c['binary'] = pad_binary(float_base(decimal, digits), pad=digits)
+    c['decimal'] = str(decimal)
+    c['hex'] = float_base(decimal, digits, 16)
+    c['binary'] = float_base(decimal, digits)
     c['s754'] = float_i754(decimal, 32)
     c['d754'] = float_i754(decimal, 64)
-    
-    fractional, integer = math.modf(decimal)
-    
+
+    fractional, integer = math.modf(decimal)    
     if fractional:
         c['comp1'] = None
         c['comp2'] = None
     else:
         c['comp1'] = integer_comp1(int(decimal), digits)
         c['comp2'] = integer_comp2(int(decimal), digits)
-    
+
+    if decimal < 0:
+        c['decimal'] = c['decimal'][1:]
+        c['hex'] = c['hex'][1:]
+        c['binary'] = c['binary'][1:]
+
     return c

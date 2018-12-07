@@ -14,15 +14,155 @@
 </head>
 
 <body onload="brython()">
+    <div class="main-container">
+
+    <div class="widget-container">
+
+        <div class="widget-header">
+            <h2>Binary Converter</h2>
+        </div>
+
+        <div class="widget-body">
+
+            <div class="side">
+                <div class="item left-side">
+                    <label for="form">Input Type</label>
+                    <br>
+                    <select id="form">
+                        <option value="binary">Binary</option>
+                        <option value="hex">Hexadecimal</option>
+                        <option value="decimal" selected="selected">Decimal</option>
+                        <option value="comp1">One's Complement</option>
+                        <option value="comp2">Two's Complement</option>
+                        <option value="s754">IEEE 754 Single</option>
+                        <option value="d754">IEEE 754 Double</option>
+                    </select>
+                </div>
+                
+                <div class="item">
+                    <label for="digits">Output Digits</label>
+                    <br>
+                    <select id="digits">
+                        <option value=32 selected="selected">32</option>
+                        <option value=64>64</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="item">
+                <label for="val">Input Value</label>
+                <br>
+                <input id="val" autofocus="autofocus">
+            </div>
+
+            <div class="item">
+                <div id="buttons">
+                    <button id="convert">Convert</button>
+                    <button id="reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="item">
+                <label for="binary">Unsigned Binary<sub>2</sub></label>
+                <br>
+                <textarea id="binary" class="textarea32" readonly></textarea>
+            </div>
+        
+            <div class="item">
+                <label for="decimal">Unsigned Decimal<sub>10</sub></label>
+                <br>
+                <textarea id="decimal" class="textarea32" readonly></textarea>
+            </div>
+        
+            <div class="item">
+                <label for="hex">Unsigned Hexadecimal<sub>16</sub></label>
+                <br>
+                <textarea id="hex" class="textarea32" readonly></textarea>
+            </div>
+
+            <div class="item">
+                <label for="comp1">One's Complement<sub>2</sub></label>
+                <br>
+                <textarea id="comp1" class="textarea32" readonly></textarea>
+            </div>
+            
+            <div class="item">
+                <label for="comp2">Two's Complement<sub>2</sub></label>
+                <br>
+                <textarea id="comp2" class="textarea32" readonly></textarea>
+            </div>
+
+            <div class="item">
+                <label for="s754">IEEE 754 Single<sub>2</sub></label>
+                <br>
+                <textarea id="s754" class="textarea32" readonly></textarea>
+            </div>
+        
+            <div class="item">
+                <label for="d754">IEEE 754 Double<sub>2</sub></label>
+                <br>
+                <textarea id="d754" class="textarea64" readonly></textarea>
+            </div>
+        </div>
+
+        <div class="widget-footer">
+            <div id="social">
+                <a href="https://github.com/bmweiner/binary_converter">About</a>
+                |
+                <a href="https://github.com/bmweiner/binary_converter/issues">Report Issue</a>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
     <script type="text/python">
         from binary_converter import convert
-
         from browser import document
+        from browser import window
+        from browser import alert 
+
+        dtypes ={
+            "binary": dict(n="Binary",c="[0,1,.,-]",p="[01.\-]+"),
+            "decimal": dict(n="Decimal",c="[0-9,.,-]",p="[\d.\-]+"),
+            "hex": dict(n="Hexadecimal",c="[0-9,a-f,.,-]",p="[\da-f.\-]+"),
+            "s754": dict(n="IEEE 754 Single",c="[0,1]",p="[01]+"),
+            "d754": dict(n="IEEE 754 Double",c="[0,1]",p="[01]+"),
+            "comp1": dict(n="One's Complement",c="[0,1]",p="[01]+"),
+            "comp2": dict(n="Two's Complement",c="[0,1]",p="[01]+")
+        }
+        for dtype in dtypes.keys():
+            dtypes[dtype]['p'] = "^" + dtypes[dtype]['p'] + "$"
 
         def update(event):
+            window.reset()
             val = document["val"].value
             form = document["form"].value
             digits = int(document["digits"].value)
+
+            val = val.lower().strip()
+
+            if form == "hex" and val[:2] == "0x":
+                val = val[2:]
+
+            # check format
+            if window.match(dtypes[form]['p'], val) == -1:
+                name = dtypes[form]['n']
+                chars = dtypes[form]['c']
+                s = "{} input value may only contain: {}".format(name, chars)
+                if val == "":
+                    alert("Input value is blank.")
+                else:
+                    alert(s)
+                return
+
+            # check length
+            if form == "s754" and len(val) != 32:
+                alert("Input value must be length 32.")
+                return
+            elif form == "d754" and len(val) != 64:
+                alert("Input value must be length 64.")
+                return
 
             if form == "decimal":
                 if '.' in str(val):
@@ -36,120 +176,50 @@
             document["decimal"].value = c["decimal"]
             document["hex"].value = c["hex"]
             document["s754"].value = c["s754"]
-            document["d754"].value = c['d754'][:32] + "\n" + c['d754'][32:]
+            document["d754"].value = c['d754']
             document["comp1"].value = c["comp1"]
             document["comp2"].value = c["comp2"]
 
-        def reset(event):
-            document["val"].value = ""
-            document["binary"].value = ""
-            document["decimal"].value = ""
-            document["hex"].value = ""
-            document["s754"].value = ""
-            document["d754"].value = ""
-            document["comp1"].value = ""
-            document["comp2"].value = ""
-
         document["convert"].bind("click", update)
-        document["reset"].bind("click", reset)
-
     </script>
 
-    <div class="main-container">
+    <script>
+        function match(pat, val) {
+            var re = new RegExp(pat);
+            return val.search(re)
+        }
 
-    <div class="widget-container">
+        function reset(){
+            var objs = ["binary", "decimal", "hex", "s754", 
+                       "d754", "comp1", "comp2"];
+            for (i=0; i<objs.length;i++){
+                document.getElementById(objs[i]).value = ""                
+            }
+        }
 
-        <div class="widget-header">
-            <h2>Binary Converter</h2>
-        </div>
+        document.getElementById("reset").addEventListener("click", function (e) {
+            reset();
+        });
 
-        <div class="widget-body">
+        document.getElementById("val").addEventListener("keyup", function (e) {
+            if (event.key !== "Enter") return;
+            document.querySelector("#convert").click();
+        });
 
-            <div class="side-container">
-                <div class="item-container" id="form-grp">
-                    <label for="form">Input Type</label>
-                    <select id="form">
-                        <option value="binary">Binary</option>
-                        <option value="decimal" selected="selected">Decimal</option>
-                        <option value="hex">Hexadecimal</option>
-                        <option value="s754">IEEE 754 Single</option>
-                        <option value="d754">IEEE 754 Double</option>
-                        <option value="comp1">One's Complement</option>
-                        <option value="comp2">Two's Complement</option>
-                    </select>
-                </div>
+        document.getElementById("digits").addEventListener("change", function (e) {
+            var digits = document.getElementById("digits");
+            if(digits.value == 32){
+                var c = "textarea32";
+            } else {
+                var c = "textarea64"
+            }
 
-                <div class="item-container">
-                    <label for="digits">Out Bits</label>
-                    <select id="digits">
-                        <option value=4>4</option>
-                        <option value=8>8</option>
-                        <option value=16>16</option>
-                        <option value=32 selected="selected">32</option>
-                        <option value=64>64</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="item-container">
-                <label for="val">Input Value</label>
-                <input id="val"><br>
-            </div>
-
-            <div class="item-container">
-                <div id="buttons">
-                    <button id="convert">Convert</button>
-                    <button id="reset">Reset</button>
-                </div>
-            </div>
-
-            <div class="item-container">
-                <label for="binary">Binary</label>
-                <input id="binary" readonly><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="decimal">Decimal</label>
-                <input id="decimal" readonly><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="hex">Hexadecimal</label>
-                <input id="hex" readonly><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="s754">IEEE 754 Single</label>
-                <input id="s754" readonly><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="d754">IEEE 754 Double</label>
-                <textarea id="d754" readonly></textarea><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="comp1">One's Complement</label>
-                <input id="comp1" readonly><br>
-            </div>
-        
-            <div class="item-container">
-                <label for="comp2">Two's Complement</label>
-                <input id="comp2" readonly><br>
-            </div>
-
-        </div>
-
-        <div class="widget-footer">
-            <div id="social">
-                <a href="https://github.com/bmweiner/binary_converter">About</a>
-                |
-                <a href="https://github.com/bmweiner/binary_converter/issues">Report Issue</a>
-            </div>
-        </div>
-
-    </div>
-    </div>
+            var objs = ["binary", "decimal", "hex", "comp1", "comp2"];
+            for (i = 0; i < objs.length; i++) {
+                document.getElementById(objs[i]).classList = c;
+            }
+        });
+    </script>
 
 </body>
 
