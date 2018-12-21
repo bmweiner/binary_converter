@@ -163,10 +163,15 @@
                 return
 
             if form == "decimal":
-                if '.' in str(val):
-                    val = float(val)
-                else:
-                    val = int(val)
+                val = float(val)
+                
+                # check min / max value
+                if val > 2.0**64:
+                    alert("Input value exceeds max value {}.".format("2^64"))
+                    return
+                elif val < -2.0**64:
+                    alert("Input value exceeds min value {}.".format("-2^64"))
+                    return
 
             c = convert(val, form, digits)
 

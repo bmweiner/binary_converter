@@ -13,9 +13,16 @@ encode_std = {d:i for i,d in enumerate("0123456789abcdef")}
 def split_float(val):
     sval = str(val)
     if '.' in sval:
-        return [int(v) for v in sval.split('.')]
+        i,f = sval.split('.')
+        return float(i), float('0.' + f)
     else:
-        return val, 0
+        return val, 0.0
+
+def xabs(val):
+    if val < 0:
+        return val * -1
+    else:
+        return val
 
 def pad_binary(val, pad=32, side='>', char='0'):
     """Pad val at left or right with character."""
@@ -30,7 +37,7 @@ def base_integer(val, base=2):
     """Convert base n val as integer to integer."""
     assert isinstance(val, str), 'val must be str'
 
-    return int(val, base)
+    return float(int(val, base))
 
 def base_fractional(val, base=2):
     """Convert base n val as fractional to fractional."""
@@ -71,7 +78,7 @@ def base_float(val, base=2):
 
 def integer_base(val, digits=32, base=2):
     """Convert integer to base n val with max digits."""
-    assert isinstance(val, int), 'val must be int'
+    assert isinstance(val, float), 'val must be float'
     assert val >= 0, 'val must be positive'
     assert base > 1 and base < 17, 'base must be in [2,16]'
     
@@ -82,12 +89,12 @@ def integer_base(val, digits=32, base=2):
     remainder = val
     chars = []
     while(remainder > 0 and len(chars) < digits):
-        char = remainder % base
+        char = int(remainder % base)
         remainder = remainder // base    
         chars.insert(0, encode[char])
     return ''.join(str(c) for c in chars)
 
-def fractional_base_old(val, digits=32, base=2):
+def fractional_base(val, digits=32, base=2):
     """Convert fractional to base n val with max digits."""
     assert isinstance(val, float), 'val must be float'
     assert val >= 0, 'val must be positive'
@@ -106,38 +113,18 @@ def fractional_base_old(val, digits=32, base=2):
         chars.append(encode[int(integer)])
     return ''.join(str(c) for c in chars)
 
-def fractional_base(val, digits=32, base=2):
-    """Convert fractional to base n val with max digits."""
-    assert isinstance(val, int), 'val must be int'
-    assert val >= 0, 'val must be positive'
-    assert base > 1 and base < 17, 'base must be in [2,16]'
-
-    if val == 0:
-        return '0'
-
-    encode = ''.join(encode_std.keys())
-    chars = []
-    power = len(str(val))
-    coeff = val
-
-    while(coeff > 0 and len(chars) < digits):
-        coeff = coeff * base
-        scoeff = str(coeff)
-        integer = 0
-        places = len(scoeff) - power
-        if places > 0:
-            integer = int(scoeff[:places])
-            coeff = int(scoeff[places:])
-        chars.append(encode[int(integer)])
-    return ''.join(str(c) for c in chars)
-
 def float_base(val, digits=32, base=2):
     """Convert float to base n val with max digits."""
     sign = '-' if val < 0 else ''
     integer, fractional = split_float(abs(val))
-
+    
     integer = integer_base(integer, digits, base)
-    fractional = fractional_base(fractional, digits - len(integer), base)
+    
+    frac_len = digits - len(integer)
+    if frac_len <= 0:
+        fractional = '0'
+    else:
+        fractional = fractional_base(fractional, frac_len, base)
     
     if fractional != '0':
         return sign + integer + '.' + fractional
@@ -154,15 +141,16 @@ def float_i754(val, precision=32):
     
     sign = '1' if val < 0 else '0'
     val = abs(val)
-    
+
     exponent = math.floor(math.log2(val))
-    characteristic = exponent + std['bias']
+    characteristic = float(exponent + std['bias'])
     _, mantissa = split_float(val / 2**exponent)
 
     e = std['exp']
     char = pad_binary(integer_base(characteristic, e), e, '>')
     
     s = std['sig']
+
     mant = pad_binary(fractional_base(mantissa, s), s, '<')
     return sign + char + mant
 
@@ -184,7 +172,7 @@ def i754_float(val, precision=32):
 
 def integer_comp1(val, digits=32):
     """Convert integer to one's complement with max digits."""
-    assert isinstance(val, int), 'val must be int'
+    assert isinstance(val, float), 'val must be float'
 
     bits = integer_base(abs(val), digits)
     if val < 0:
@@ -197,7 +185,7 @@ def integer_comp1(val, digits=32):
 
 def integer_comp2(val, digits=32):
     """Convert integer to two's complement with max digits."""
-    assert isinstance(val, int), 'val must be int'
+    assert isinstance(val, float), 'val must be float'
         
     bits = integer_comp1(val, digits)
     if bits[0] == '1':
@@ -269,7 +257,7 @@ def convert(val, form='decimal', digits=32):
     if form == 'binary':
         decimal = base_float(val, 2)    
     elif form == 'decimal':
-        decimal = val
+        decimal = float(val)
     elif form == 'hex':
         decimal = base_float(val, 16)        
     elif form == 's754':
@@ -280,7 +268,7 @@ def convert(val, form='decimal', digits=32):
         decimal = comp1_integer(val)
     elif form == 'comp2':
         decimal = comp2_integer(val)
-
+    
     c = dict()
     c['val'] = val
     c['decimal'] = str(decimal)
@@ -289,13 +277,13 @@ def convert(val, form='decimal', digits=32):
     c['s754'] = float_i754(decimal, 32)
     c['d754'] = float_i754(decimal, 64)
 
-    fractional, integer = math.modf(decimal)    
+    fractional, integer = math.modf(decimal)
     if fractional:
         c['comp1'] = None
         c['comp2'] = None
     else:
-        c['comp1'] = integer_comp1(int(decimal), digits)
-        c['comp2'] = integer_comp2(int(decimal), digits)
+        c['comp1'] = integer_comp1(float(decimal), digits)
+        c['comp2'] = integer_comp2(float(decimal), digits)
 
     if decimal < 0:
         c['decimal'] = c['decimal'][1:]
